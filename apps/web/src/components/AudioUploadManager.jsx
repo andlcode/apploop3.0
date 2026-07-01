@@ -14,15 +14,51 @@ import { ScrollArea } from '@/components/ui/scroll-area.jsx';
 
 const ALLOWED_AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg'];
 
+const BLOCKED_EXTENSIONS = [
+  '.pdf', '.txt', '.png', '.jpg', '.jpeg', '.gif', '.webp',
+  '.doc', '.docx', '.xls', '.xlsx', '.zip', '.rar', '.exe',
+];
+
+/** Última extensão do nome (ex.: ".mpeg" em "arquivo.mp3.mpeg"). */
 const getFileExtension = (fileName) => {
   const dotIndex = fileName.lastIndexOf('.');
   if (dotIndex === -1) return '';
   return fileName.slice(dotIndex).toLowerCase();
 };
 
+/** Verifica se o nome indica .mp3, .wav ou .ogg (case-insensitive), inclusive .mp3.mpeg. */
+const hasAllowedAudioExtension = (fileName) => {
+  const lower = fileName.toLowerCase();
+
+  if (ALLOWED_AUDIO_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
+    return true;
+  }
+
+  return ALLOWED_AUDIO_EXTENSIONS.some((ext) => {
+    const base = ext.slice(1);
+    return new RegExp(`\\.${base}\\.[a-z0-9]+$`, 'i').test(fileName);
+  });
+};
+
+const isClearlyInvalidFile = (fileName) => {
+  const ext = getFileExtension(fileName);
+  return BLOCKED_EXTENSIONS.includes(ext);
+};
+
 const isAudioFile = (file) => {
-  if (file.type?.startsWith('audio/')) return true;
-  return ALLOWED_AUDIO_EXTENSIONS.includes(getFileExtension(file.name));
+  const mime = file.type?.toLowerCase() || '';
+  const name = file.name || '';
+
+  if (isClearlyInvalidFile(name)) return false;
+
+  if (mime.startsWith('audio/')) return true;
+
+  // MP3 às vezes vem como video/mpeg no Windows (ex.: arquivo.mp3.mpeg)
+  if (mime === 'video/mpeg' && name.toLowerCase().includes('.mp3')) {
+    return true;
+  }
+
+  return hasAllowedAudioExtension(name);
 };
 
 const AudioUploadManager = ({ isOpen, onOpenChange }) => {
