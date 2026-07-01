@@ -12,11 +12,25 @@ import { useLoopManager } from '@/contexts/LoopManagerContext.jsx';
 import { toast } from 'sonner';
 import { ScrollArea } from '@/components/ui/scroll-area.jsx';
 
+const ALLOWED_AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg'];
+
+const getFileExtension = (fileName) => {
+  const dotIndex = fileName.lastIndexOf('.');
+  if (dotIndex === -1) return '';
+  return fileName.slice(dotIndex).toLowerCase();
+};
+
+const isAudioFile = (file) => {
+  if (file.type?.startsWith('audio/')) return true;
+  return ALLOWED_AUDIO_EXTENSIONS.includes(getFileExtension(file.name));
+};
+
 const AudioUploadManager = ({ isOpen, onOpenChange }) => {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [rejectedFilesMessage, setRejectedFilesMessage] = useState('');
   
   // Rhythm Selection State
   const { ritmos, selectedRitmo, setSelectedRitmo, addRitmo, addAudioToRitmo } = useLoopManager();
@@ -27,24 +41,29 @@ const AudioUploadManager = ({ isOpen, onOpenChange }) => {
   const [isCreatingNew, setIsCreatingNew] = useState(false);
 
   const fileInputRef = useRef(null);
+  const prevIsOpenRef = useRef(false);
 
-  // Sync initial selection with current rhythm
+  // Reset fila e sincroniza ritmo apenas quando o modal abre (false → true)
   useEffect(() => {
-    if (isOpen) {
-      if (selectedRitmo) {
-        setTargetRhythmSelection(selectedRitmo);
-        setIsCreatingNew(false);
-      } else if (availableRhythms.length > 0) {
-        setTargetRhythmSelection(availableRhythms[0]);
-        setIsCreatingNew(false);
-      } else {
-        setTargetRhythmSelection("new");
-        setIsCreatingNew(true);
-      }
-      setSelectedFiles([]);
-      setUploadProgress(0);
-      setNewRhythmName("");
+    const justOpened = isOpen && !prevIsOpenRef.current;
+    prevIsOpenRef.current = isOpen;
+
+    if (!justOpened) return;
+
+    if (selectedRitmo) {
+      setTargetRhythmSelection(selectedRitmo);
+      setIsCreatingNew(false);
+    } else if (availableRhythms.length > 0) {
+      setTargetRhythmSelection(availableRhythms[0]);
+      setIsCreatingNew(false);
+    } else {
+      setTargetRhythmSelection('new');
+      setIsCreatingNew(true);
     }
+    setSelectedFiles([]);
+    setUploadProgress(0);
+    setNewRhythmName('');
+    setRejectedFilesMessage('');
   }, [isOpen, selectedRitmo, availableRhythms.length]);
 
   const handleDrag = useCallback((e) => {
@@ -57,34 +76,59 @@ const AudioUploadManager = ({ isOpen, onOpenChange }) => {
     }
   }, []);
 
-  const filterAudioFiles = (files) => {
-    const audioFiles = Array.from(files).filter(file => 
-      file.type.startsWith('audio/') || file.name.endsWith('.mp3') || file.name.endsWith('.wav')
-    );
-    
-    if (audioFiles.length < files.length) {
-      toast.warning('Alguns arquivos foram ignorados. Apenas áudios são permitidos.');
-    }
-    return audioFiles;
-  };
+  const filterAudioFiles = useCallback((files) => {
+    const fileList = Array.from(files);
+    const audioFiles = fileList.filter(isAudioFile);
+    const rejectedCount = fileList.length - audioFiles.length;
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const validFiles = filterAudioFiles(e.dataTransfer.files);
-      setSelectedFiles(prev => [...prev, ...validFiles]);
+    if (rejectedCount > 0) {
+      if (audioFiles.length === 0) {
+        const message =
+          'Nenhum arquivo de áudio válido foi selecionado. Use arquivos .mp3, .wav ou .ogg.';
+        setRejectedFilesMessage(message);
+        toast.error(message);
+      } else {
+        setRejectedFilesMessage('');
+        toast.warning(
+          `Alguns arquivos foram ignorados (${rejectedCount}). Apenas .mp3, .wav e .ogg são aceitos.`
+        );
+      }
     }
+
+    return audioFiles;
   }, []);
 
+  const applyFileSelection = useCallback(
+    (files) => {
+      if (!files?.length) return;
+
+      const validFiles = filterAudioFiles(files);
+      if (validFiles.length > 0) {
+        setRejectedFilesMessage('');
+        setSelectedFiles((prev) => [...prev, ...validFiles]);
+      }
+    },
+    [filterAudioFiles]
+  );
+
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragActive(false);
+
+      if (e.dataTransfer.files?.length) {
+        applyFileSelection(e.dataTransfer.files);
+      }
+    },
+    [applyFileSelection]
+  );
+
   const handleChange = (e) => {
-    e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
-      const validFiles = filterAudioFiles(e.target.files);
-      setSelectedFiles(prev => [...prev, ...validFiles]);
+    if (e.target.files?.length) {
+      applyFileSelection(e.target.files);
     }
+    e.target.value = '';
   };
 
   const removeFile = (indexToRemove) => {
@@ -218,7 +262,7 @@ const AudioUploadManager = ({ isOpen, onOpenChange }) => {
               ref={fileInputRef}
               type="file" 
               multiple 
-              accept="audio/mpeg, audio/wav, audio/ogg" 
+              accept="audio/mpeg,audio/wav,audio/ogg,.mp3,.wav,.ogg"
               onChange={handleChange}
               className="hidden" 
             />
@@ -238,6 +282,15 @@ const AudioUploadManager = ({ isOpen, onOpenChange }) => {
               Selecionar Arquivos
             </Button>
           </div>
+
+          {rejectedFilesMessage && (
+            <div
+              role="alert"
+              className="text-sm text-destructive border border-destructive/30 bg-destructive/10 px-4 py-3 rounded-lg"
+            >
+              {rejectedFilesMessage}
+            </div>
+          )}
 
           {/* Upload Progress & Action */}
           {selectedFiles.length > 0 && (

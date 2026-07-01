@@ -1,0 +1,222 @@
+[
+  {
+    "title": "[PROD] Montar componente Toaster do Sonner na aplicação",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nCrítica\n\n## Descrição\nO projeto usa `toast()` do Sonner em LoopManagerContext, audioManager, AudioUploadManager e AudioFileDialog, mas o componente `<Toaster />` nunca é renderizado em App.jsx ou main.jsx.\n\n## Impacto\nNotificações de erro, sucesso e aviso ficam invisíveis. Em show, falhas silenciosas são inaceitáveis.\n\n## Critério de Aceitação\n- [ ] `<Toaster />` montado no root da aplicação\n- [ ] Toasts visíveis em upload, substituição e falha de áudio\n\n## Arquivos envolvidos\n- apps/web/src/App.jsx\n- apps/web/src/main.jsx\n- apps/web/src/components/ui/sonner.jsx"
+  },
+  {
+    "title": "[PROD] Pads desabilitados ignoram áudios estáticos e overrides",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nCrítica\n\n## Descrição\nLoopPadGrid habilita pads apenas se `currentAudios[pad.type]` existir no contexto `ritmos`. Ignora arquivos em `public/` e overrides localStorage (`audio_*_data`) que o audioManager já carrega.\n\n## Impacto\nPads aparecem como SEM ÁUDIO mesmo quando o playback funcionaria.\n\n## Critério de Aceitação\n- [ ] Função `hasAudioForPad(rhythm, type)` considera contexto, paths estáticos e overrides\n- [ ] UI consistente com capacidade real de reprodução\n\n## Arquivos envolvidos\n- apps/web/src/components/LoopPadGrid.jsx\n- apps/web/src/lib/rhythmManager.js\n- apps/web/src/lib/audioFileManager.js"
+  },
+  {
+    "title": "[PROD] Incluir kit de áudio padrão Pop Rock 1 nos assets",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nCrítica\n\n## Descrição\nNão há MP3s no repositório. `public/` contém apenas `.gitkeep`.\n\n## Impacto\nUsuário precisa fazer upload manual de 9 áudios antes de usar o app.\n\n## Critério de Aceitação\n- [ ] Kit completo (LEVADA 1-4, VIRADA 1-3, FINAL, PRATO) nos paths corretos\n- [ ] Pads habilitados na primeira visita\n\n## Arquivos envolvidos\n- apps/web/public/audios/pop-rock-1/\n- apps/web/src/lib/rhythmManager.js"
+  },
+  {
+    "title": "[PROD] Unificar paths de áudio (/audios vs /audio/loops)",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nCrítica\n\n## Descrição\nCódigo espera `/audios/{ritmo}/levadas/levada1.mp3`, mas `public/` usa `/audio/loops/` e `/loops/`.\n\n## Impacto\n404 em todos os áudios estáticos.\n\n## Critério de Aceitação\n- [ ] Convenção única documentada e implementada\n\n## Arquivos envolvidos\n- apps/web/public/\n- apps/web/src/lib/rhythmManager.js\n- apps/web/src/lib/audioFileManager.js"
+  },
+  {
+    "title": "[PROD] Unificar persistência de áudio no localStorage",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nRefatoração\n\n## Prioridade\nCrítica\n\n## Descrição\nUpload usa `apploop_ritmos`; Substituir usa `audio_{ritmo}_{tipo}_data`. Comportamentos divergentes entre upload e substituição.\n\n## Impacto\nBugs inconsistentes; substituir funciona no playback mas não habilita pads.\n\n## Critério de Aceitação\n- [ ] API única de persistência\n- [ ] Migração de dados existentes\n\n## Arquivos envolvidos\n- apps/web/src/contexts/LoopManagerContext.jsx\n- apps/web/src/lib/audioFileManager.js\n- apps/web/src/lib/audioManager.js"
+  },
+  {
+    "title": "[PROD] Normalizar IDs de ritmo (kebab-case vs UPPERCASE)",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nAlta\n\n## Descrição\nUpload cria `POP ROCK 1` via toUpperCase(); padrão é `pop-rock-1`. Chaves duplicadas no objeto ritmos.\n\n## Impacto\nRitmos duplicados, paths quebrados, selector confuso.\n\n## Critério de Aceitação\n- [ ] IDs internos sempre kebab-case\n- [ ] Display names separados do ID\n\n## Arquivos envolvidos\n- apps/web/src/components/AudioUploadManager.jsx\n- apps/web/src/components/RhythmSelector.jsx"
+  },
+  {
+    "title": "[PROD] Invalidar cache Howler após substituir áudio",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nAlta\n\n## Descrição\n`loadAudio` retorna instância cacheada se `state() === 'loaded'`. `substituirAudio` atualiza localStorage mas não invalida cache.\n\n## Impacto\nÁudio antigo continua tocando até reload completo.\n\n## Critério de Aceitação\n- [ ] `invalidateCache(rhythm, type)` após substituir/excluir/upload\n\n## Arquivos envolvidos\n- apps/web/src/lib/audioManager.js\n- apps/web/src/lib/audioFileManager.js"
+  },
+  {
+    "title": "[PROD] Sincronização musical causa drift (Date.now vs playback)",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nAlta\n\n## Descrição\n`agendarAudioComSincronismo` e BeatIndicator usam `masterSyncTime` (Date.now), não posição real do Howler. Funções `calcularTempoRestante` existem mas não são usadas.\n\n## Impacto\nViradas desalinhadas em sessões longas; indicador visual impreciso.\n\n## Critério de Aceitação\n- [ ] Scheduling baseado em posição real do áudio\n- [ ] BeatIndicator sincronizado\n\n## Arquivos envolvidos\n- apps/web/src/lib/audioManager.js\n- apps/web/src/components/BeatIndicator.jsx\n- apps/web/src/contexts/LoopManagerContext.jsx"
+  },
+  {
+    "title": "[PROD] Adicionar Error Boundary global",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nAlta\n\n## Descrição\nSem Error Boundary. Erro em qualquer componente derruba a SPA inteira.\n\n## Impacto\nTela branca sem recuperação durante show.\n\n## Critério de Aceitação\n- [ ] Error Boundary com UI de fallback e botão Recarregar\n\n## Arquivos envolvidos\n- apps/web/src/App.jsx"
+  },
+  {
+    "title": "[PROD] Remover scripts Horizons do build de produção",
+    "labels": ["security", "production-blocker"],
+    "body": "## Categoria\nSegurança\n\n## Prioridade\nAlta\n\n## Descrição\nvite.config.js injeta handlers com `postMessage(..., '*')`, monkey-patch de fetch e console.error em produção.\n\n## Impacto\nVazamento de erros/dados; código morto de plataforma Horizons.\n\n## Critério de Aceitação\n- [ ] Scripts removidos ou condicionados a iframe Horizons\n\n## Arquivos envolvidos\n- apps/web/vite.config.js\n- apps/web/plugins/"
+  },
+  {
+    "title": "[PROD] Configurar pipeline CI/CD (build + lint)",
+    "labels": ["enhancement", "production-blocker"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nAlta\n\n## Descrição\nNão existe `.github/workflows/`.\n\n## Impacto\nRegressões chegam à produção sem detecção.\n\n## Critério de Aceitação\n- [ ] Workflow CI em PR/push com build e lint\n\n## Arquivos envolvidos\n- .github/workflows/ci.yml"
+  },
+  {
+    "title": "[PROD] Testes automatizados para lógica crítica",
+    "labels": ["enhancement", "production-blocker"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nAlta\n\n## Descrição\nZero testes para viradas, scheduling e reconhecimento de arquivos.\n\n## Impacto\nMudanças quebram transições musicais sem alerta.\n\n## Critério de Aceitação\n- [ ] Vitest configurado\n- [ ] Testes para identificarVirada, reconhecerArquivo, calcularDuracaoCompasso\n\n## Arquivos envolvidos\n- apps/web/src/lib/rhythmManager.js\n- apps/web/src/contexts/LoopManagerContext.jsx"
+  },
+  {
+    "title": "[PROD] Onboarding para primeiro uso do AppLoop",
+    "labels": ["ux", "production-blocker"],
+    "body": "## Categoria\nUX\n\n## Prioridade\nAlta\n\n## Descrição\nUsuário novo vê pads desabilitados sem explicação de upload, atalhos ou fluxo levada→virada.\n\n## Impacto\nImpossível aprender sem manual.\n\n## Critério de Aceitação\n- [ ] Tour ou modal de boas-vindas\n- [ ] Legenda de atalhos Q/W/E/A/S/D/Z/X/C\n\n## Arquivos envolvidos\n- apps/web/src/pages/LooperPage.jsx"
+  },
+  {
+    "title": "[PROD] Feedback visual de loading ao carregar áudios",
+    "labels": ["ux", "production-blocker"],
+    "body": "## Categoria\nUX\n\n## Prioridade\nAlta\n\n## Descrição\n`loadAudio` é async sem indicador na UI.\n\n## Impacto\nUsuário clica múltiplas vezes achando que falhou.\n\n## Critério de Aceitação\n- [ ] Spinner ou pulse no pad durante load\n- [ ] Debounce de cliques\n\n## Arquivos envolvidos\n- apps/web/src/components/LoopPadGrid.jsx\n- apps/web/src/lib/audioManager.js"
+  },
+  {
+    "title": "[PROD] Tratar política de autoplay (iOS/Safari)",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nAlta\n\n## Descrição\nSem UI para desbloquear áudio após gesture do usuário.\n\n## Impacto\nApp parece quebrado no mobile até interação.\n\n## Critério de Aceitação\n- [ ] Overlay 'Toque para ativar áudio'\n- [ ] Testado em iOS Safari\n\n## Arquivos envolvidos\n- apps/web/src/lib/audioManager.js\n- apps/web/src/pages/LooperPage.jsx"
+  },
+  {
+    "title": "[PROD] Layout mobile inadequado para uso em palco",
+    "labels": ["ux", "production-blocker"],
+    "body": "## Categoria\nUX\n\n## Prioridade\nAlta\n\n## Descrição\nGrid 2 colunas no mobile, header grande, ControlPanel abaixo exige scroll.\n\n## Impacto\nBaterista no palco não aciona pads rapidamente.\n\n## Critério de Aceitação\n- [ ] Modo palco com pads grandes\n- [ ] Parar Tudo acessível sem scroll\n\n## Arquivos envolvidos\n- apps/web/src/pages/LooperPage.jsx\n- apps/web/src/components/LoopPadGrid.jsx\n- apps/web/src/components/Header.jsx"
+  },
+  {
+    "title": "[PROD] Estratégia robusta para QuotaExceededError",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nAlta\n\n## Descrição\nÁudios base64 no localStorage (~5MB). Toast existe mas sem fallback.\n\n## Impacto\nPerda de kits personalizados após uploads.\n\n## Critério de Aceitação\n- [ ] IndexedDB ou aviso pré-upload\n- [ ] Export/import de kit como backup\n\n## Arquivos envolvidos\n- apps/web/src/lib/audioFileManager.js\n- apps/web/src/contexts/LoopManagerContext.jsx"
+  },
+  {
+    "title": "[PROD] README e documentação de deploy",
+    "labels": ["documentation", "production-blocker"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nAlta\n\n## Descrição\nREADME contém apenas `# apploop3.0`.\n\n## Impacto\nImpossível onboardar devs ou fazer deploy reproduzível.\n\n## Critério de Aceitação\n- [ ] Setup, build, deploy e estrutura de áudios documentados\n\n## Arquivos envolvidos\n- README.md"
+  },
+  {
+    "title": "[PROD] Completar .gitignore e remover dist do versionamento",
+    "labels": ["enhancement", "production-blocker"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nMédia\n\n## Descrição\n`.gitignore` só ignora node_modules. `dist/` commitado.\n\n## Critério de Aceitação\n- [ ] Ignorar dist/, .env*, *.local\n\n## Arquivos envolvidos\n- .gitignore"
+  },
+  {
+    "title": "[PROD] Corrigir npm start incompleto na raiz",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nMédia\n\n## Descrição\n`\"start\": \"concurrently --kill-others --raw\"` não executa comando.\n\n## Critério de Aceitação\n- [ ] npm start executa preview do app\n\n## Arquivos envolvidos\n- package.json"
+  },
+  {
+    "title": "[PROD] Configurar deploy SPA (vercel.json / rewrites)",
+    "labels": ["enhancement", "production-blocker"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nMédia\n\n## Descrição\nSó `.htaccess` para Apache. Sem config Vercel/Netlify.\n\n## Critério de Aceitação\n- [ ] vercel.json ou equivalente com SPA fallback\n\n## Arquivos envolvidos\n- vercel.json (novo)"
+  },
+  {
+    "title": "[PROD] Bug Select numero 'default' em Final/Prato",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nMédia\n\n## Descrição\nAudioFileDialog usa SelectItem value 'default' mas lógica espera numero vazio para Final/Prato.\n\n## Critério de Aceitação\n- [ ] Valor consistente entre Select e substituirAudio/excluirAudio\n\n## Arquivos envolvidos\n- apps/web/src/components/AudioFileDialog.jsx"
+  },
+  {
+    "title": "[PROD] Estado audioStates órfão no contexto",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nRefatoração\n\n## Prioridade\nMédia\n\n## Descrição\n`audioStates` carregado/salvo no localStorage mas nunca atualizado.\n\n## Critério de Aceitação\n- [ ] Remover ou implementar uso funcional\n\n## Arquivos envolvidos\n- apps/web/src/contexts/LoopManagerContext.jsx"
+  },
+  {
+    "title": "[PROD] LEVADA 1 bloqueada permanentemente na sessão",
+    "labels": ["ux", "production-blocker"],
+    "body": "## Categoria\nUX\n\n## Prioridade\nMédia\n\n## Descrição\n`levada1Used` impede reusar LEVADA 1 após primeiro uso sem explicação na UI.\n\n## Critério de Aceitação\n- [ ] Comportamento documentado ou reset ao Parar Tudo\n\n## Arquivos envolvidos\n- apps/web/src/contexts/LoopManagerContext.jsx\n- apps/web/src/components/LoopPadGrid.jsx"
+  },
+  {
+    "title": "[PROD] BPM aceita valores fora do range 60-200 durante digitação",
+    "labels": ["bug", "production-blocker"],
+    "body": "## Categoria\nBug\n\n## Prioridade\nMédia\n\n## Descrição\nclampBpm só roda onBlur. Valores inválidos afetam barDuration e rate temporariamente.\n\n## Critério de Aceitação\n- [ ] BPM sempre clampado entre 60-200\n\n## Arquivos envolvidos\n- apps/web/src/components/ControlPanel.jsx"
+  },
+  {
+    "title": "[POST] Remover audioEngine.js (Tone.js) e dependência morta",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nRefatoração\n\n## Prioridade\nMédia\n\n## Descrição\n818 linhas Tone.js não importadas em lugar algum.\n\n## Critério de Aceitação\n- [ ] Arquivo removido; dependência tone removida do package.json\n\n## Arquivos envolvidos\n- apps/web/src/lib/audioEngine.js\n- apps/web/package.json"
+  },
+  {
+    "title": "[POST] Remover componentes shadcn/ui não utilizados",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nRefatoração\n\n## Prioridade\nMédia\n\n## Descrição\n~40 componentes ui scaffold não usados (sidebar, chart, carousel, etc.).\n\n## Critério de Aceitação\n- [ ] Apenas componentes usados permanecem\n\n## Arquivos envolvidos\n- apps/web/src/components/ui/"
+  },
+  {
+    "title": "[POST] Lazy loading e code splitting",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nPerformance\n\n## Prioridade\nMédia\n\n## Descrição\nBundle JS ~528KB sem lazy loading de modais ou rotas.\n\n## Critério de Aceitação\n- [ ] React.lazy para AudioUploadManager e AudioFileDialog\n\n## Arquivos envolvidos\n- apps/web/src/App.jsx\n- apps/web/src/components/Header.jsx"
+  },
+  {
+    "title": "[POST] Migrar codebase para TypeScript",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nRefatoração\n\n## Prioridade\nBaixa\n\n## Descrição\nApp 100% JavaScript sem tipagem.\n\n## Critério de Aceitação\n- [ ] tsconfig e migração incremental dos módulos lib/"
+  },
+  {
+    "title": "[POST] PWA com suporte offline",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nMédia\n\n## Descrição\nShow pode ter conexão instável; app não funciona offline após primeiro load.\n\n## Critério de Aceitação\n- [ ] Service worker cacheando assets e áudios"
+  },
+  {
+    "title": "[POST] Monitoramento com Sentry ou similar",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nMédia\n\n## Descrição\nSem observabilidade de erros em produção.\n\n## Critério de Aceitação\n- [ ] Erros capturados com contexto de ritmo/BPM"
+  },
+  {
+    "title": "[POST] Export/import de kits de ritmo",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nAlta\n\n## Descrição\nUsuários não podem backup ou compartilhar kits.\n\n## Critério de Aceitação\n- [ ] Export JSON/ZIP; import restaura ritmo completo"
+  },
+  {
+    "title": "[POST] Sincronização cloud de ritmos",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nBaixa\n\n## Descrição\nPersistência apenas local; sem backend.\n\n## Critério de Aceitação\n- [ ] API para sync entre dispositivos"
+  },
+  {
+    "title": "[POST] Refatorar LoopManagerContext (separar concerns)",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nRefatoração\n\n## Prioridade\nMédia\n\n## Descrição\n375 linhas combinando scheduling, storage e playback.\n\n## Critério de Aceitação\n- [ ] Hooks separados: useRhythmStorage, usePlaybackScheduler"
+  },
+  {
+    "title": "[POST] Self-host fontes Google (Rajdhani)",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nPerformance\n\n## Prioridade\nBaixa\n\n## Descrição\n@import url fonts.googleapis.com em index.css adiciona latência e dependência externa.\n\n## Arquivos envolvidos\n- apps/web/src/index.css"
+  },
+  {
+    "title": "[POST] Painel permanente de atalhos de teclado",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nUX\n\n## Prioridade\nMédia\n\n## Descrição\nAtalhos Q/W/E só visíveis no hover dos pads.\n\n## Critério de Aceitação\n- [ ] Legenda sempre visível ou toggle de ajuda" 
+  },
+  {
+    "title": "[POST] Auditoria WCAG completa de acessibilidade",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nUX\n\n## Prioridade\nMédia\n\n## Descrição\nPads com aria parcial; modais sem focus trap auditado; contraste neon não validado.\n\n## Critério de Aceitação\n- [ ] Lighthouse a11y >= 90\n- [ ] Navegação completa por teclado"
+  },
+  {
+    "title": "[POST] Remover código morto (HomePage, UploadPanel, uploadAudio.js)",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nRefatoração\n\n## Prioridade\nBaixa\n\n## Descrição\nArquivos não importados aumentam confusão.\n\n## Arquivos envolvidos\n- apps/web/src/pages/HomePage.jsx\n- apps/web/src/components/UploadPanel.jsx\n- apps/web/src/api/uploadAudio.js"
+  },
+  {
+    "title": "[POST] Testes E2E com Playwright",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nMédia\n\n## Descrição\nFluxos upload e playback não testados end-to-end.\n\n## Critério de Aceitação\n- [ ] E2E: upload kit, tocar levada, trocar com virada"
+  },
+  {
+    "title": "[POST] Tree-shaking de dependências não usadas",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nPerformance\n\n## Prioridade\nMédia\n\n## Descrição\nrecharts, embla-carousel, vaul, date-fns, next-themes no package.json sem uso aparente.\n\n## Arquivos envolvidos\n- apps/web/package.json"
+  },
+  {
+    "title": "[POST] Animações aprimoradas de transição entre levadas",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nUX\n\n## Prioridade\nBaixa\n\n## Descrição\nFeedback visual de viradas pode ser mais expressivo para palco.\n\n## Arquivos envolvidos\n- apps/web/src/components/LoopPadGrid.jsx"
+  },
+  {
+    "title": "[POST] Logo e identidade visual final",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nBaixa\n\n## Descrição\nPlaceholder 'Logo Here' no Header.\n\n## Arquivos envolvidos\n- apps/web/src/components/Header.jsx"
+  },
+  {
+    "title": "[POST] Backend real para upload de áudio",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nMelhoria\n\n## Prioridade\nBaixa\n\n## Descrição\napi/uploadAudio.js é mock não integrado.\n\n## Arquivos envolvidos\n- apps/web/src/api/uploadAudio.js"
+  },
+  {
+    "title": "[POST] Memoização de componentes pesados",
+    "labels": ["enhancement"],
+    "body": "## Categoria\nPerformance\n\n## Prioridade\nBaixa\n\n## Descrição\nLoopPadGrid re-renderiza a cada mudança de estado do contexto.\n\n## Critério de Aceitação\n- [ ] React.memo em pads individuais ou split context"
+  }
+]
